@@ -212,13 +212,13 @@ export default function InterviewPage() {
         <div className="w-full bg-slate-200 h-1.5 rounded-full mb-4 overflow-hidden">
           <div
             className="bg-indigo-600 h-full transition-all duration-500"
-            style={{ width: `${(questionIndex / maxQuestions) * 100}%` }}
+            style={{ width: `${Math.min((questionIndex / maxQuestions) * 100, 100)}%` }}
           />
         </div>
 
         <div className="text-center mb-8">
           <span className="text-slate-400 text-xs font-bold uppercase tracking-widest">
-            Question {questionIndex + 1} of {maxQuestions}
+            Question {Math.min(questionIndex + 1, maxQuestions)} of {maxQuestions}
           </span>
         </div>
 
