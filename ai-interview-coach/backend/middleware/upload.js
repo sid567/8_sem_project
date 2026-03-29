@@ -11,13 +11,8 @@ const fileFilter = (req, file, cb) => {
   if (ACCEPTED_MIME_TYPES.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(
-      new multer.MulterError(
-        'LIMIT_UNEXPECTED_FILE',
-        `Unsupported file type: ${file.mimetype}. Only PDF and DOCX are accepted.`
-      ),
-      false
-    );
+    // Use a plain Error — multer v2 no longer has multer.MulterError on the default export
+    cb(new Error(`UNSUPPORTED_FILE_TYPE: Only PDF and DOCX are accepted, got: ${file.mimetype}`), false);
   }
 };
 

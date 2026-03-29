@@ -1,9 +1,10 @@
-const genAI = require('../config/gemini');
+const groq = require('../config/groq');
 const { buildExtractProfilePrompt }   = require('../prompts/extractProfile.prompt');
 const { buildGenerateQuestionPrompt } = require('../prompts/generateQuestion.prompt');
 const { buildEvaluateAnswerPrompt }   = require('../prompts/evaluateAnswer.prompt');
 
-const MODEL_NAME = 'gemini-1.5-flash';
+// Free, fast Groq model — swap to 'llama3-8b-8192' for even faster responses
+const MODEL_NAME = 'llama-3.3-70b-versatile';
 
 /**
  * Retries an async function with exponential backoff on failure.
@@ -13,20 +14,20 @@ async function retryWithBackoff(fn, retries = 3, delay = 1000) {
     return await fn();
   } catch (error) {
     if (retries === 0) throw error;
-    
-    // Check if error is retryable (like a 429 rate limit or 5xx server error)
-    const isRetryable = error.status === 429 || (error.status >= 500 && error.status < 600) || !error.status;
-    
+
+    const status = error?.status ?? error?.statusCode;
+    const isRetryable = status === 429 || (status >= 500 && status < 600) || !status;
+
     if (!isRetryable) throw error;
 
-    console.warn(`[Gemini Retry] ${retries} attempts left. Retrying in ${delay / 1000}s...`);
+    console.warn(`[Groq Retry] ${retries} attempts left. Retrying in ${delay / 1000}s...`);
     await new Promise((resolve) => setTimeout(resolve, delay));
     return retryWithBackoff(fn, retries - 1, delay * 2);
   }
 }
 
 /**
- * Strips markdown code fences (```json ... ```) that Gemini sometimes wraps around JSON.
+ * Strips markdown code fences that the model sometimes wraps around JSON.
  */
 function stripFences(raw) {
   return raw
@@ -35,38 +36,45 @@ function stripFences(raw) {
     .replace(/\s*```$/, '');
 }
 
-async function extractProfileFromCV(rawText) {
-  const model  = genAI.getGenerativeModel({ model: MODEL_NAME });
-  const prompt = buildExtractProfilePrompt(rawText);
+/**
+ * Sends a prompt to Groq and returns the text response.
+ */
+async function callGroq(prompt) {
+  const completion = await groq.chat.completions.create({
+    model: MODEL_NAME,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+  });
+  return completion.choices[0]?.message?.content ?? '';
+}
 
-  const raw = await retryWithBackoff(() => model.generateContent(prompt).then(r => r.response.text()));
+async function extractProfileFromCV(rawText) {
+  const prompt = buildExtractProfilePrompt(rawText);
+  const raw = await retryWithBackoff(() => callGroq(prompt));
 
   try {
     return JSON.parse(stripFences(raw));
   } catch (err) {
-    throw new Error(`Invalid JSON from Gemini: ${err.message}`);
+    throw new Error(`Invalid JSON from Groq: ${err.message}\nRaw: ${raw.slice(0, 200)}`);
   }
 }
 
 async function generateQuestion(profileJSON, stage, conversationHistory) {
-  const model  = genAI.getGenerativeModel({ model: MODEL_NAME });
   const prompt = buildGenerateQuestionPrompt(profileJSON, stage, conversationHistory);
-
-  const resultText = await retryWithBackoff(() => model.generateContent(prompt).then(r => r.response.text()));
-  return resultText.trim();
+  const result = await retryWithBackoff(() => callGroq(prompt));
+  return result.trim();
 }
 
 async function evaluateAnswer(questionText, transcriptText, profileJSON) {
-  const model  = genAI.getGenerativeModel({ model: MODEL_NAME });
   const prompt = buildEvaluateAnswerPrompt(questionText, transcriptText, profileJSON);
-
-  const raw = await retryWithBackoff(() => model.generateContent(prompt).then(r => r.response.text()));
+  const raw = await retryWithBackoff(() => callGroq(prompt));
 
   try {
     return JSON.parse(stripFences(raw));
   } catch (err) {
-    throw new Error(`Invalid JSON from Gemini: ${err.message}`);
+    throw new Error(`Invalid JSON from Groq: ${err.message}\nRaw: ${raw.slice(0, 200)}`);
   }
 }
 
 module.exports = { extractProfileFromCV, generateQuestion, evaluateAnswer };
+

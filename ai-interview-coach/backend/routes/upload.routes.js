@@ -11,13 +11,14 @@ const router = express.Router();
 router.post(
   '/',
   (req, res, next) => {
-    // Run multer and convert MulterError into a clean JSON 400 response
+    // Run multer and convert errors into a clean JSON 400 response
     upload.single('cv')(req, res, (err) => {
       if (err) {
+        console.error('[upload route] multer error:', err.code, err.message);
         if (err.code === 'LIMIT_FILE_SIZE') {
           return res.status(400).json({ error: 'File too large. Maximum allowed size is 5 MB.' });
         }
-        if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        if (err.code === 'LIMIT_UNEXPECTED_FILE' || err.message?.startsWith('UNSUPPORTED_FILE_TYPE')) {
           return res.status(400).json({ error: 'Unsupported file type. Please upload a PDF or DOCX.' });
         }
         return res.status(400).json({ error: err.message || 'File upload failed.' });

@@ -62,9 +62,10 @@ ${formatHistory(conversationHistory)}
 
 RULES:
 - Ask exactly ONE question.
+- KEEP IT BRIEF: Maximum 2 sentences. Under 40 words total. No compound or multi-part questions.
 - Do NOT repeat or rephrase any topic already covered in the conversation history.
 - Tailor the question to the candidate's actual profile — reference their real skills or projects where relevant.
-- Return ONLY the question text. No preamble like "Sure!", no "Great question!", no explanation, no punctuation outside the question itself.
+- Return ONLY the question text. No preamble like "Sure!", no "Great answer!", no explanation.
 - The question must end with a question mark.
 
 YOUR QUESTION:`;
