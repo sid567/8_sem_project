@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB        = require('./config/db');
+const authRoutes       = require('./routes/auth.routes');
 const uploadRoutes     = require('./routes/upload.routes');
 const sessionRoutes    = require('./routes/session.routes');
 const interviewRoutes  = require('./routes/interview.routes');
@@ -25,6 +26,7 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/upload',  uploadRoutes);
 app.use('/api/session', sessionRoutes);
 app.use('/api/session', interviewRoutes);

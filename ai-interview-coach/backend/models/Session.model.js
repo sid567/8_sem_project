@@ -18,6 +18,11 @@ const sessionSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: false,
+    },
     candidateName: {
       type: String,
       default: '',

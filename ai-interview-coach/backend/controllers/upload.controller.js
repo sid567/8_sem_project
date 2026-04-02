@@ -51,6 +51,7 @@ async function uploadCV(req, res) {
 
     const session = await Session.create({
       sessionId,
+      userId: req.user?._id,
       candidateName: profile.name || '',
       status:        'ready',
       profileJSON:   profile,

@@ -240,4 +240,17 @@ async function getQuestions(req, res) {
   }
 }
 
-module.exports = { getSession, getNextQuestion, submitAnswer, completeSession, getQuestions };
+/**
+ * Returns session history for the logged in user
+ */
+async function getHistory(req, res) {
+  try {
+    const sessions = await Session.find({ userId: req.user._id }).sort({ uploadedAt: -1 });
+    return res.json(sessions);
+  } catch (err) {
+    console.error('[getHistory]', err);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+}
+
+module.exports = { getSession, getNextQuestion, submitAnswer, completeSession, getQuestions, getHistory };
